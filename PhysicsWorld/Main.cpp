@@ -20,14 +20,38 @@ void Main()
 	// [_] 地面 (幅 1200 cm の床）
 	const P2Body ground = world.createLine(P2Static, Vec2{ 0, 0 }, Line{ -600, 0, 600, 0 });
 
+	// ^ 坂（幅 100の正三角形）
+	const P2Body slopeL = world.createTriangle(P2Static, Vec2{ 0, 0 }, Triangle{ -550, 0, -500, -50 * sqrt(3), -450, 0});
+	const P2Body slopeR = world.createTriangle(P2Static, Vec2{ 0, 0 }, Triangle{ 450, 0, 500, -50 * sqrt(3), 550, 0 });
+
 	// 物体
 	Array<P2Body> bodies;
 
 	// 2D カメラ
 	Camera2D camera{ Vec2{ 0, -300 } };
 
+	// クリア判定ゲージ
+	Point clearGaugePos{ 50, 50 };
+	Point clearGaugeSize{ 200, 100 };
+	double clearGaugeGrad = 30;
+	Rect clearGaugeFrame{ clearGaugePos, clearGaugeSize };
+	Rect clearGauge{ clearGaugePos, 0, 100 };
+
+	// クリア範囲
+	Rect goal{ -300, -50, 600, 50 };
+
+	// スコア
+	double score = 0.0;
+
+	// クリアフラグ
+	bool clearFlg = false;
+
+	// フォントの設定
+	Font font30{ 30 };
+
 	while (System::Update())
 	{
+
 		for (accumulatorSec += Scene::DeltaTime(); stepSec <= accumulatorSec; accumulatorSec -= stepSec)
 		{
 			// 2D 物理演算のワールドを更新
@@ -54,6 +78,18 @@ void Main()
 				bodies << world.createCircle(P2Dynamic, Cursor::PosF(), 10, mate);
 			}
 
+			// スコアをカウント
+			score = 0.0;
+			for (const auto& body : bodies)
+			{
+				if (goal.intersects(body.getPos())) {
+					score += 20;
+				}
+			}
+
+			// ゴール
+			goal.draw(ColorF{ 1.0, 0, 0, 0.2 });
+
 			// すべてのボディを描画
 			for (const auto& body : bodies)
 			{
@@ -62,8 +98,36 @@ void Main()
 
 			// 地面を描画
 			ground.draw(Palette::Skyblue);
+			slopeL.draw(Palette::Skyblue);
+			slopeR.draw(Palette::Skyblue);
+
+
 		}
 
+
+		// 長方形の辺を X 軸方向に 30px ずつスライドさせた平行四辺形
+		if (clearFlg || clearGauge.w + Scene::DeltaTime() * 50 >= clearGaugeFrame.w) {
+			clearGauge.w = clearGaugeFrame.w;
+			clearFlg = true;
+		}
+		else if (clearGauge.w > score) {
+			clearGauge.w -= Scene::DeltaTime() * 50;
+		}
+		else if (clearGauge.w + Scene::DeltaTime() * 50 >= score) {
+			clearGauge.w = score;
+		}
+		else {
+			clearGauge.w += Scene::DeltaTime() * 50;
+		}
+		clearGaugeFrame.shearedX(clearGaugeGrad).drawFrame(0, 2, ColorF{ 1, 1, 1 });
+		if (clearFlg) {
+			clearGauge.shearedX(clearGaugeGrad).draw(Palette::Orange);
+			font30(U"You did it!").draw(Arg::center(clearGauge.center()), ColorF{1,1,1});
+		}else{
+			clearGauge.shearedX(clearGaugeGrad).draw(Palette::Skyblue);
+		}
+
+		
 		// 2D カメラの操作を描画
 		camera.draw(Palette::Orange);
 	}
