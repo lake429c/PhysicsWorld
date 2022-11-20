@@ -28,14 +28,14 @@ void Main()
 	{
 		if (menuFlg && SimpleGUI::Button(U"Collecting Balls", Vec2{ 500, 300 }))
 		{
-			loadTime = 3.0;
+			loadTime = 500.0;
 			ld = new Loading();
 			menuFlg = false;
 			loadFlg = true;
 		}
 
 		if (loadFlg) {
-			if (ld != nullptr && loadTime > 0) {
+			if (ld != nullptr && loadTime > 0 && !MouseR.up()) {
 				(*ld).execute();
 				loadTime -= Scene::DeltaTime();
 			}
