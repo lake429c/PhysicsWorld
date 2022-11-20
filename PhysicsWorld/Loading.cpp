@@ -49,63 +49,78 @@ void Loading::waveCircle() {
 
 void Loading::cyclicalRectangle() {
 
-	Point rects{ 400, 300 };
-	Point rectSize{ 100, 50 };
+	Point rects{ 600, 300 };
+	Point rectSize{ 50, 30 };
 
-
+	// 蓄積時間の加算
 	accumulator += Scene::DeltaTime();
 
+	// 蓄積時間のリセット
 	if (spawnTime * 4 < accumulator)
 	{
 		accumulator = 0;
 	}
 
-	// 蓄積時間が出現間隔を超えたら
-	if (spawnTime * 0 <= accumulator && accumulator < spawnTime * 1)
-	{
-		topRect = Rect{
-			rects,
-			(int)(rectSize.x * (accumulator - spawnTime * 0) / spawnTime),
-			rectSize.y
-		};
-		topRect.draw(ColorF{ 1, 1, 1, 1 });
-		leftRect.draw(ColorF{ 1, 1, 1, spawnTime * 1 - accumulator / spawnTime });
-	}
-	if (spawnTime * 1 <= accumulator && accumulator < spawnTime * 2)
-	{
-		rightRect = Rect{
-			rects.x + rectSize.x,
-			rects.y,
-			rectSize.y,
-			(int)(rectSize.x * (accumulator - spawnTime * 1) / spawnTime)
-		};
-		rightRect.draw(ColorF{ 1, 1, 1, 1 });
-		topRect.draw(ColorF{ 1, 1, 1, spawnTime * 2 - accumulator / spawnTime });
-	}
-	if (spawnTime * 2 <= accumulator && accumulator < spawnTime * 3)
-	{
-		bottomRect = Rect{
-			(int)(rects.x + rectSize.y + rectSize.x - rectSize.x * (accumulator - spawnTime * 2) / spawnTime),
-			rects.y + rectSize.x,
-			(int)(rectSize.x * (accumulator - spawnTime * 2) / spawnTime),
-			rectSize.y
-		};
-		bottomRect.draw(ColorF{ 1, 1, 1, 1 });
-		rightRect.draw(ColorF{ 1, 1, 1, spawnTime * 3 - accumulator / spawnTime });
-	}
-	if (spawnTime * 3 <= accumulator && accumulator < spawnTime * 4)
-	{
-		leftRect = Rect{
-			rects.x,
-			(int)(rects.y + rectSize.y + rectSize.x - rectSize.x * (accumulator - spawnTime * 3) / spawnTime),
-			rectSize.y,
-			(int)(rectSize.x * (accumulator - spawnTime * 3) / spawnTime)
-		};
-		leftRect.draw(ColorF{ 1, 1, 1, 1 });
-		bottomRect.draw(ColorF{ 1, 1, 1, spawnTime * 4 - accumulator / spawnTime });
+	// 蓄積時間によるフラグの循環
+	bool topFlg = (spawnTime * 0 <= accumulator && accumulator < spawnTime * 1) ? true : false;
+	bool rightFlg = (spawnTime * 1 <= accumulator && accumulator < spawnTime * 2) ? true : false;
+	bool bottomFlg = (spawnTime * 2 <= accumulator && accumulator < spawnTime * 3) ? true : false;
+	bool leftFlg = (spawnTime * 3 <= accumulator && accumulator < spawnTime * 4) ? true : false;
 
-	}
+	// トランジションの更新
+	topTransition.update(topFlg);
+	rightTransition.update(rightFlg);
+	bottomTransition.update(bottomFlg);
+	leftTransition.update(leftFlg);
+
+	// 長方形の大きさ設定
+	topRect = Rect{
+		rects.x + rectSize.y,
+		rects.y,
+		topFlg ? (int)ceil(rectSize.x * topTransition.value()) : rectSize.x,
+		rectSize.y
+	};
+	rightRect = Rect{
+		rects.x + rectSize.x,
+		rects.y + rectSize.y,
+		rectSize.y,
+		rightFlg ? (int)ceil(rectSize.x * rightTransition.value()) : rectSize.x
+	};
+	bottomRect = Rect{
+		bottomFlg ? (int)(rects.x + rectSize.x - ceil(rectSize.x * bottomTransition.value())) : rects.x,
+		rects.y + rectSize.x,
+		bottomFlg ? (int)ceil(rectSize.x * bottomTransition.value()) : rectSize.x,
+		rectSize.y
+	};
+	leftRect = Rect{
+		rects.x,
+		leftFlg ? (int)(rects.y + rectSize.x - ceil(rectSize.x * leftTransition.value())) : rects.y,
+		rectSize.y,
+		leftFlg ? (int)ceil(rectSize.x * leftTransition.value()) : rectSize.x
+	};
+
+	// 長方形の描画
+	topRect.draw(ColorF{ 1, 1, 1, topFlg ? 1.0 : topTransition.value() });
+	rightRect.draw(ColorF{ 1, 1, 1, rightFlg ? 1.0 : rightTransition.value() });
+	bottomRect.draw(ColorF{ 1, 1, 1, bottomFlg ? 1.0 : bottomTransition.value() });
+	leftRect.draw(ColorF{ 1, 1, 1, leftFlg ? 1.0 : leftTransition.value() });
+
 }
 
 void Loading::DonatsCircle() {
+
+	const double t = Scene::Time();
+
+	for (auto i : step(6))
+	{
+		// 円座標系における角度座標
+		// 60° ごとに配置し、毎秒 30° の速さで回転する
+		const double theta = (i * -60_deg + t * 180_deg);
+
+		const Vec2 pos = OffsetCircular{ Scene::Center(), 100, theta };
+
+		Circle{ 400 + 100 * i, (-50 + pos.y) > 340 ? 340 : -50 + pos.y, 20 }.draw(ColorF{ 0.8 });
+
+	}
+
 }
