@@ -12,7 +12,7 @@ Loading::~Loading() {
 
 void Loading::execute() {
 
-	int selectCode = 2;
+	int selectCode = 3;
 
 	switch (selectCode) {
 	case 1:
@@ -26,22 +26,45 @@ void Loading::execute() {
 		break;
 	}
 
+	// 中心を示す点
+	Circle{ Scene::Center(), 5 }.draw(ColorF{1.0, 0, 0});
 }
 
 
 void Loading::waveCircle() {
 
+	// 経過時間
 	const double t = Scene::Time();
 
-	for (auto i : step(6))
+	// 円の個数
+	const int numCircle = 6;
+
+	// 円の大きさ
+	const double radiusCircle = 20;
+
+	// 円の間隔
+	const double intervalCircle = radiusCircle * 5;
+
+	// ウェーブの速さ（s/1周）
+	const double velocityWave = 2.0;
+
+	for (auto i : step(numCircle))
 	{
-		// 円座標系における角度座標
-		// 60° ごとに配置し、毎秒 30° の速さで回転する
-		const double theta = (i * -60_deg + t * 180_deg);
 
-		const Vec2 pos = OffsetCircular{ Scene::Center(), 100, theta };
+		// 極座標系で半径intervalCircleの円周上に等間隔に座標を配置
+		const double theta = (
+				i * 360.0 / numCircle * Math::Pi_v<long double> / 180 + 
+				t * -360.0 / velocityWave * Math::Pi_v<long double> / 180
+			);
+		const Vec2 pos = OffsetCircular{ Scene::Center(), intervalCircle, theta };
 
-		Circle{ 400 + 100 * i, (-50 + pos.y) > 340 ? 340 : -50 + pos.y, 20 }.draw(ColorF{ 0.8 });
+		// 円を描画
+		Circle{
+			Scene::Center().x - (numCircle - 1) / 2.0 * intervalCircle + i * intervalCircle,
+			pos.y < Scene::Center().y ? pos.y : Scene::Center().y,
+			radiusCircle
+		}
+		.draw(ColorF{ 0.5 + 0.5 * (pos.y < Scene::Center().y) });
 
 	}
 }
@@ -49,8 +72,20 @@ void Loading::waveCircle() {
 
 void Loading::cyclicalRectangle() {
 
-	Point rects{ 600, 300 };
+	// 出現間隔（秒）
+	double spawnTime = 1.0;
+
+	// 四角
+	Rect topRect;
+	Rect rightRect;
+	Rect bottomRect;
+	Rect leftRect;
+
+	// 長方形ひとつの大きさ
 	Point rectSize{ 50, 30 };
+
+	// 循環長方形の左上位置
+	Point rects{ Scene::Center().x - (rectSize.x + rectSize.y) / 2, Scene::Center().y - (rectSize.x + rectSize.y) / 2 };
 
 	// 蓄積時間の加算
 	accumulator += Scene::DeltaTime();
@@ -100,27 +135,36 @@ void Loading::cyclicalRectangle() {
 	};
 
 	// 長方形の描画
-	topRect.draw(ColorF{ 1, 1, 1, topFlg ? 1.0 : topTransition.value() });
-	rightRect.draw(ColorF{ 1, 1, 1, rightFlg ? 1.0 : rightTransition.value() });
-	bottomRect.draw(ColorF{ 1, 1, 1, bottomFlg ? 1.0 : bottomTransition.value() });
-	leftRect.draw(ColorF{ 1, 1, 1, leftFlg ? 1.0 : leftTransition.value() });
+	topRect.draw(HSV{ 90 * 0, 0.7, 1.0, topFlg ? 1.0 : topTransition.value() });
+	rightRect.draw(HSV{ 90 * 1, 0.7, 1.0, rightFlg ? 1.0 : rightTransition.value() });
+	bottomRect.draw(HSV{ 90 * 2, 0.7, 1.0, bottomFlg ? 1.0 : bottomTransition.value() });
+	leftRect.draw(HSV{ 90 * 3, 0.7, 1.0, leftFlg ? 1.0 : leftTransition.value() });
 
 }
 
 void Loading::DonatsCircle() {
 
-	const double t = Scene::Time();
+	// 円の中心位置
+	const Point posCircle = { Scene::Center() };
 
-	for (auto i : step(6))
-	{
-		// 円座標系における角度座標
-		// 60° ごとに配置し、毎秒 30° の速さで回転する
-		const double theta = (i * -60_deg + t * 180_deg);
+	// 円の半径
+	const double radiusCircle = 50;
 
-		const Vec2 pos = OffsetCircular{ Scene::Center(), 100, theta };
+	// 円枠の基準位置の周期
+	const double phaseBase = Periodic::Sine0_1(3.0s);
 
-		Circle{ 400 + 100 * i, (-50 + pos.y) > 340 ? 340 : -50 + pos.y, 20 }.draw(ColorF{ 0.8 });
+	// 円外枠の周期
+	const double phaseOuter = Periodic::Sine0_1(5.0s);
 
-	}
+	// 円内枠の周期
+	const double phaseInner = Periodic::Sine0_1(13.0s);
+
+	// 円の描画
+	Circle{ posCircle, (phaseBase + 0.5) * radiusCircle }
+		.drawFrame(
+			radiusCircle * phaseInner,
+			radiusCircle * phaseOuter,
+			ColorF{ (phaseBase + phaseInner) / 2, (phaseBase + phaseOuter) / 2, (phaseOuter + phaseInner) / 2 }
+	);
 
 }

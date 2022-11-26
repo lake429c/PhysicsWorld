@@ -4,9 +4,6 @@ class Loading
 
 private:
 
-	// 出現間隔（秒）
-	double spawnTime = 1.0;
-
 	// 蓄積された時間（秒）
 	double accumulator = 0.0;
 
@@ -15,12 +12,6 @@ private:
 	Transition rightTransition{ 1.0s , 3.0s };
 	Transition bottomTransition{ 1.0s , 3.0s };
 	Transition leftTransition{ 1.0s , 3.0s };
-
-	// 四角
-	Rect topRect;
-	Rect rightRect;
-	Rect bottomRect;
-	Rect leftRect;
 
 
 	void waveCircle();
